@@ -4,12 +4,18 @@ var thegame = function(game) {
 	var starfield;
 	var lasers;
 	var fireButton;
-	var laserTimer;// the lasers come out to fast
+	var laserTimer;// the lasers come out too fast
 	var enemyTimer;
 	var score;
 	var scoreText;
+	var laserSound;
 	var MIN_ENEMY_SPACING;
 	var MAX_ENEMY_SPACING;
+	var ACCELERATION;
+	var DRAG;
+	var MAXSPEED;
+	var bank;
+	var explosions;
 }
 
 thegame.prototype = {
@@ -20,10 +26,16 @@ thegame.prototype = {
 	    // scrolling background of stars
 	    starfield = this.game.add.tileSprite(0, 0, 800, 600, 'background');
 	    // spaceship
+	    ACCELERATION = 600;
+	    DRAG = 400;
+	    MAXSPEED = 400;
 	    player = this.game.add.sprite(400, 500, 'player');
 	    player.scale.setTo(0.5, 0.5);
 	    player.anchor.setTo(0.5, 0.5);
 	    this.game.physics.enable(player, Phaser.Physics.ARCADE);
+	    player.body.maxVelocity.setTo(MAXSPEED, MAXSPEED);
+	    player.body.drag.setTo(DRAG, DRAG);
+	    
 	    
 	    // lasers
 	    lasers = this.game.add.group();
@@ -34,6 +46,7 @@ thegame.prototype = {
 	    lasers.setAll('anchor.y', 1);
 	    lasers.setAll('outOfBoundsKill', true); // kill lasers when out of bounds
 	    lasers.setAll('checkWorldBounds', true);
+	    laserSound = this.game.add.audio('laserAudio'); // laser audio
 
 	    // bad guys
 	    enemies = this.game.add.group();
@@ -48,12 +61,6 @@ thegame.prototype = {
 	    enemies.setAll('outOfBoundsKill', true);
 	    enemies.setAll('checkWorldBounds', true);
 	    enemyTimer = 0;
-	    // kick off the bad guys
-	    //MIN_ENEMY_SPACING = 300;
-		//MAX_ENEMY_SPACING = 3000;
-	    
-	   	//this.game.time.events.add(this.game.rnd.integerInRange(MIN_ENEMY_SPACING, MAX_ENEMY_SPACING), this.launchNewEnemy());
-
 
 	    // set up keyboard controls
 	    cursors = this.game.input.keyboard.createCursorKeys();
@@ -61,18 +68,31 @@ thegame.prototype = {
 
 	    score = 0;
 	    scoreText = this.game.add.text(16, 16, 'Score: 0', {fontSize: '32px', fill: 'white'});
+	    scoreText.font = 'Press Start 2P';
+	    scoreText.fontSize = 16;
+
+	    explosions = this.game.add.group();
+	    explosions.enableBody = true;
+	    explosions.physicsBodyType = Phaser.Physics.ARCADE;
+	    console.log("start");
+	    explosions.createMultiple(30, 'explosion');
+	    explosions.setAll('anchor.x', 0.5);
+	    explosions.setAll('anchor.y', 0.5);
+	    explosions.forEach(this.setupExplosions, this);
+	    
 	},
 
 	update: function() {
 		starfield.tilePosition.y += 2;
 
-	    player.body.velocity.setTo(0, 0);
+	    player.body.acceleration.x = 0;
 
 	    if (cursors.left.isDown) {
-	        player.body.velocity.x = -200;
+	        player.body.acceleration.x = -ACCELERATION;
+
 	    }
 	    else if (cursors.right.isDown) {
-	        player.body.velocity.x = 200;
+	        player.body.acceleration.x = ACCELERATION;
 	    }
 	    else if (cursors.up.isDown) {
 	    	player.body.velocity.y = -200;
@@ -80,6 +100,21 @@ thegame.prototype = {
 	    else if (cursors.down.isDown) {
 	    	player.body.velocity.y = 200;
 	    }
+
+	    if (player.x > this.game.width - 30) {
+	    	player.x = this.game.width - 30;
+	    }
+	    if (player.x < 30) {
+	    	player.x = 30;
+	    }
+	    if (player.y > this.game.height - 30) {
+	    	player.y = this.game.height - 30;
+	    }
+	    if (player.y < 30) {
+	    	player.y = 30;
+	    }
+	    bank = player.body.velocity.x / MAXSPEED;
+	    player.scale.x = .5 - Math.abs(bank) / 8;	
 	    
 	    if (fireButton.isDown) {
 	       this.fireLaser();
@@ -97,12 +132,12 @@ thegame.prototype = {
             	laser.reset(player.x, player.y - 16);
             	laser.body.velocity.y = -400;
             	laserTimer = this.game.time.now + LASER_SPEED;
+            	laserSound.play();
         	}
     	}
 	},
 
 	launchNewEnemy: function() {
-
 		if (this.game.time.now > enemyTimer) {
 			var ENEMY_SPEED = 300;
 			var enemy = enemies.getFirstExists(false);
@@ -117,12 +152,22 @@ thegame.prototype = {
 		}			
 	},
 
+	setupExplosions: function(enemy) {
+		enemy.animations.add('explosion'); // add explosion animation
+	},
+
 	shipsCollide: function(player, enemy) {
+		var explosion = explosions.getFirstExists(false);
+		explosion.reset(enemy.body.x + enemy.body.halfWidth, enemy.body.y + enemy.body.halfHeight);
+		explosion.play('explosion');
 		enemy.kill();
-		this.game.state.start("GameOver", true, false, score);
+		this.game.state.start('GameOver');
 	},
 
 	enemyHit: function(enemy, laser) {
+		var explosion = explosions.getFirstExists(false);
+		explosion.reset(enemy.body.x + enemy.body.halfWidth, enemy.body.y + enemy.body.halfHeight);
+		explosion.play('explosion');
 		enemy.kill();
 		laser.kill();
 		score+=10;
