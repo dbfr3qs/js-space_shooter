@@ -7,8 +7,7 @@ var scoreText;
 gameover.prototype = {
 
 	init: function(score) {
-		this.score = score;
-		console.log(this.score);		
+		this.score = score;		
 	},
 
 	create: function() {

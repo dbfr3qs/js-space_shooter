@@ -21,9 +21,7 @@ WebFontConfig = {
 preload.prototype = {
 	preload: function() {
 		var barWidth = (this.game.cache.getImage("loading").width) / 2;
-		console.log(barWidth);
 		var loadingBar = this.add.sprite((this.game.width/2) - barWidth, this.game.height/3, "loading");
-		console.log(this.game.width/2 - barWidth)
 		
 		//	loadingBar.anchor.setTo(0.5,0.5);
 		this.load.setPreloadSprite(loadingBar, 0);
@@ -34,17 +32,15 @@ preload.prototype = {
     	this.game.load.script('webfont', '//ajax.googleapis.com/ajax/libs/webfont/1.4.7/webfont.js');
     	this.game.load.audio('laserAudio', 'assets/laser.ogg');
     	this.game.load.spritesheet('explosion', 'assets/explosion.png', 64, 64);
-
+    	this.game.stage.disableVisibilityChange = true;
 
     	var delay = this.game.time.events.add(Phaser.Timer.SECOND * 2, this.createText, this);
 	},
 	create: function() {
-		//this.game.time.events.add(Phaser.Timer.SECOND, "", this);
 		
 		this.game.input.keyboard.onDownCallback = function(e) {
 			this.game.state.start("TheGame");
 		};
-		//this.game.time.events.add(50000, this.game.state.start("TheGame"), this);
 	},
 
 	createText: function() {

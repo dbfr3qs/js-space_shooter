@@ -64,7 +64,7 @@ thegame.prototype = {
 
 	    // set up keyboard controls
 	    cursors = this.game.input.keyboard.createCursorKeys();
-	    fireButton = this.game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+	    fireButton = this.game.input.keyboard.addKey(Phaser.Keyboard.S);
 
 	    score = 0;
 	    scoreText = this.game.add.text(16, 16, 'Score: 0', {fontSize: '32px', fill: 'white'});
